@@ -206,7 +206,7 @@ async function fetchData() {
   try {
     const body1 = JSON.stringify({ itemViewIdentifier: GO_VIEW, page: 1 });
     const res1 = await fetch(`${GO_BASE_URL}/integration-api/v1/items`, {
-      method: 'GET',
+      method: 'POST',
       headers: { 'apiKey': GO_API_KEY, 'Content-Type': 'application/json' },
       body: body1
     });
@@ -220,7 +220,7 @@ async function fetchData() {
       const pp = [];
       for (let p = 2; p <= Math.min(totalPages, 20); p++) {
         pp.push(fetch(`${GO_BASE_URL}/integration-api/v1/items`, {
-          method: 'GET',
+          method: 'POST',
           headers: { 'apiKey': GO_API_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({ itemViewIdentifier: GO_VIEW, page: p })
         }).then(r => r.json()).then(d => parseItems(d)));
