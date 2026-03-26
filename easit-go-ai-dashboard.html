@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Easit GO · AI Insights</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --easit-blue: #0057B8;
+  --easit-blue-dark: #003F8A;
+  --easit-blue-light: #E8F0FB;
+  --easit-accent: #00A3E0;
+  --easit-green: #2E9E6B;
+  --easit-orange: #E07B39;
+  --easit-red: #D64045;
+  --easit-purple: #6B4FBB;
+  --bg: #F4F6FA;
+  --surface: #FFFFFF;
+  --surface2: #F0F3F9;
+  --border: #DDE3EE;
+  --text: #1A1F36;
+  --text2: #5A6380;
+  --text3: #8B93AA;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 2px 8px rgba(0,60,140,0.08), 0 0 1px rgba(0,60,140,0.12);
+  --shadow-lg: 0 8px 32px rgba(0,60,140,0.12), 0 0 1px rgba(0,60,140,0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* HEADER */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--easit-blue);
+  letter-spacing: -0.3px;
+}
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--easit-blue);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.logo-badge {
+  background: linear-gradient(135deg, var(--easit-accent), var(--easit-blue));
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text2);
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--easit-green);
+  display: inline-block;
+  margin-right: 4px;
+  box-shadow: 0 0 0 2px rgba(46,158,107,0.2);
+}
+
+/* MAIN */
+main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+/* UPLOAD ZONE */
+#upload-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  text-align: center;
+  padding: 40px 24px;
+}
+.upload-card {
+  background: var(--surface);
+  border: 2px dashed var(--border);
+  border-radius: 20px;
+  padding: 60px 48px;
+  max-width: 520px;
+  width: 100%;
+  cursor: pointer;
+  transition: all .25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.upload-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(0,87,184,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.upload-card:hover, .upload-card.dragover {
+  border-color: var(--easit-blue);
+  background: var(--easit-blue-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.upload-icon {
+  width: 72px; height: 72px;
+  background: var(--easit-blue-light);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  border: 1.5px solid rgba(0,87,184,0.15);
+}
+.upload-icon svg { width: 32px; height: 32px; }
+.upload-title { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 10px; letter-spacing: -0.3px; }
+.upload-sub { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 28px; }
+.upload-btn {
+  background: var(--easit-blue);
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.upload-btn:hover { background: var(--easit-blue-dark); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,87,184,0.3); }
+.upload-formats { font-size: 12px; color: var(--text3); margin-top: 16px; }
+#fileInput { display: none; }
+
+/* LOADING */
+#loading-section { display: none; text-align: center; padding: 80px 24px; }
+.loader { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--easit-blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 24px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-steps { display: flex; flex-direction: column; gap: 10px; max-width: 280px; margin: 0 auto; text-align: left; }
+.loading-step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); opacity: 0; transform: translateX(-10px); transition: all .4s ease; }
+.loading-step.visible { opacity: 1; transform: none; }
+.step-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--easit-blue-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; }
+.step-icon.done { background: var(--easit-green); color: #fff; }
+
+/* DASHBOARD */
+#dashboard-section { display: none; }
+
+.dash-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.dash-title { font-size: 24px; font-weight: 600; color: var(--text); letter-spacing: -0.4px; }
+.dash-sub { font-size: 14px; color: var(--text2); margin-top: 4px; }
+.new-file-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text2);
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.new-file-btn:hover { border-color: var(--easit-blue); color: var(--easit-blue); }
+
+/* KPI CARDS */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.kpi-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+.kpi-card:hover { box-shadow: var(--shadow-lg); }
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.kpi-card.blue::after { background: var(--easit-blue); }
+.kpi-card.green::after { background: var(--easit-green); }
+.kpi-card.orange::after { background: var(--easit-orange); }
+.kpi-card.red::after { background: var(--easit-red); }
+.kpi-label { font-size: 12px; font-weight: 500; color: var(--text3); letter-spacing: 0.3px; text-transform: uppercase; margin-bottom: 10px; }
+.kpi-value { font-size: 32px; font-weight: 600; color: var(--text); letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
+.kpi-sub { font-size: 12px; color: var(--text2); }
+.kpi-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 500;
+}
+.badge-green { background: rgba(46,158,107,0.1); color: var(--easit-green); }
+.badge-orange { background: rgba(224,123,57,0.1); color: var(--easit-orange); }
+.badge-red { background: rgba(214,64,69,0.1); color: var(--easit-red); }
+
+/* AI INSIGHTS BOX */
+.ai-insights {
+  background: linear-gradient(135deg, #003F8A 0%, #0057B8 50%, #005EB8 100%);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,60,140,0.2);
+}
+.ai-insights::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+}
+.ai-insights::after {
+  content: '';
+  position: absolute;
+  bottom: -60px; right: 80px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: rgba(0,163,224,0.1);
+}
+.ai-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+.ai-tag {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(4px);
+}
+.ai-insights-title { font-size: 15px; font-weight: 600; }
+.ai-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.88);
+  position: relative;
+  z-index: 1;
+  min-height: 60px;
+}
+.ai-cursor {
+  display: inline-block;
+  width: 2px; height: 14px;
+  background: rgba(255,255,255,0.7);
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.ai-bullets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+  position: relative;
+  z-index: 1;
+}
+.ai-bullet {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.5;
+  backdrop-filter: blur(4px);
+}
+.ai-bullet strong { display: block; color: #fff; font-size: 13px; margin-bottom: 2px; }
+
+/* CHARTS GRID */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.chart-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.chart-card.full { grid-column: 1 / -1; }
+.card-title { font-size: 13px; font-weight: 600; color: var(--text2); letter-spacing: 0.2px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.card-title-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--easit-blue); }
+.chart-wrap { position: relative; }
+
+/* BAR LIST */
+.bar-list { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: flex; align-items: center; gap: 10px; }
+.bar-label { font-size: 12px; color: var(--text2); width: 120px; flex-shrink: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; height: 22px; background: var(--surface2); border-radius: 6px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; color: #fff; transition: width 1s cubic-bezier(.25,.8,.25,1); }
+.bar-num { font-size: 12px; color: var(--text2); width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* STATUS PILLS */
+.status-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.status-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.status-pill-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+.status-pill-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.status-pill-count { font-size: 18px; font-weight: 600; color: var(--text); }
+
+/* FOOTER */
+.demo-footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 12px;
+  color: var(--text3);
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+}
+.demo-footer strong { color: var(--easit-blue); }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .ai-bullets { grid-template-columns: 1fr; }
+  .chart-card.full { grid-column: auto; }
+  main { padding: 20px 16px; }
+}
+
+/* FADE IN */
+@keyframes fadeUp { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: none; } }
+.fade-up { animation: fadeUp .5s ease forwards; opacity: 0; }
+.delay-1 { animation-delay: .1s; }
+.delay-2 { animation-delay: .2s; }
+.delay-3 { animation-delay: .3s; }
+.delay-4 { animation-delay: .4s; }
+.delay-5 { animation-delay: .5s; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M3 9L7 13L15 5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    Easit GO
+    <span class="logo-badge">AI Insights</span>
+  </div>
+  <div class="header-right">
+    <span class="status-dot"></span> AI-ansluten
+    <span style="color: var(--border)">|</span>
+    Demo
+  </div>
+</header>
+
+<!-- UPLOAD -->
+<section id="upload-section">
+  <div class="upload-card" id="dropZone">
+    <div class="upload-icon">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 20V10M16 10L12 14M16 10L20 14" stroke="#0057B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 22H24" stroke="#0057B8" stroke-width="2" stroke-linecap="round"/>
+        <rect x="4" y="4" width="24" height="24" rx="6" stroke="#0057B8" stroke-width="1.5" stroke-dasharray="3 2"/>
+      </svg>
+    </div>
+    <div class="upload-title">Ladda upp ärendeexport</div>
+    <div class="upload-sub">Dra och släpp din Excel-export från Easit GO hit, eller klicka för att välja fil. AI:n analyserar datan och genererar insikter automatiskt.</div>
+    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 2v8M4 6l3.5-4L11 6M2 11h11" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Välj Excel-fil
+    </button>
+    <div class="upload-formats">Stöder .xlsx och .xls · Demodata inkluderat</div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this.files[0])">
+  </div>
+  <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+    <button class="upload-btn" style="background: var(--easit-green); font-size: 13px; padding: 10px 22px;" onclick="loadDemoData()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#fff" stroke-width="1.5"/><path d="M5 7l2 2 3-3" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Visa med demodata
+    </button>
+  </div>
+</section>
+
+<!-- LOADING -->
+<section id="loading-section" style="display:none; text-align:center; padding: 80px 24px; min-height: calc(100vh - 60px); display: none; align-items: center; justify-content: center; flex-direction: column;">
+  <div class="loader"></div>
+  <div style="font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 24px;">Analyserar ärendedata...</div>
+  <div class="loading-steps" id="loadingSteps">
+    <div class="loading-step" id="step1"><div class="step-icon">📊</div> Läser Excel-fil</div>
+    <div class="loading-step" id="step2"><div class="step-icon">🔍</div> Identifierar mönster</div>
+    <div class="loading-step" id="step3"><div class="step-icon">🤖</div> Genererar AI-insikter</div>
+    <div class="loading-step" id="step4"><div class="step-icon">📈</div> Bygger visualiseringar</div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<div id="dashboard-section" style="display:none;">
+<main>
+
+  <div class="dash-header fade-up">
+    <div>
+      <div class="dash-title" id="dashTitle">Ärendeöversikt</div>
+      <div class="dash-sub" id="dashSub">Laddar...</div>
+    </div>
+    <button class="new-file-btn" onclick="resetToUpload()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v5M6.5 1L4 3.5M6.5 1L9 3.5M1.5 9.5V11A.5.5 0 002 11.5h9a.5.5 0 00.5-.5V9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Ny fil
+    </button>
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi-card blue fade-up delay-1">
+      <div class="kpi-label">Totalt antal ärenden</div>
+      <div class="kpi-value" id="kpiTotal">–</div>
+      <div class="kpi-sub" id="kpiPeriod">–</div>
+    </div>
+    <div class="kpi-card red fade-up delay-2">
+      <div class="kpi-label">Öppna ärenden</div>
+      <div class="kpi-value" id="kpiOpen">–</div>
+      <div class="kpi-sub" id="kpiOpenSub">–</div>
+    </div>
+    <div class="kpi-card green fade-up delay-3">
+      <div class="kpi-label">Lösta ärenden</div>
+      <div class="kpi-value" id="kpiSolved">–</div>
+      <div class="kpi-sub" id="kpiSolvedSub">–</div>
+    </div>
+    <div class="kpi-card orange fade-up delay-4">
+      <div class="kpi-label">Väntar på kund</div>
+      <div class="kpi-value" id="kpiWaiting">–</div>
+      <div class="kpi-sub" id="kpiWaitingSub">–</div>
+    </div>
+  </div>
+
+  <!-- AI INSIGHTS -->
+  <div class="ai-insights fade-up delay-5">
+    <div class="ai-header">
+      <span class="ai-tag">✦ AI-analys</span>
+      <span class="ai-insights-title">Automatisk ärendeinsikt</span>
+    </div>
+    <div class="ai-text" id="aiText"><span class="ai-cursor"></span></div>
+    <div class="ai-bullets" id="aiBullets"></div>
+  </div>
+
+  <!-- STATUS + TYP -->
+  <div class="charts-grid">
+    <div class="chart-card fade-up">
+      <div class="card-title"><span class="card-title-dot"></span> Statusfördelning</div>
+      <div class="status-grid" id="statusGrid"></div>
+    </div>
+    <div class="chart-card fade-up delay-1">
+      <div class="card-title"><span class="card-title-dot" style="background:var(--easit-purple)"></span> Ärendetyp</div>
+      <div class="chart-wrap" style="height: 220px;"><canvas id="typChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- KATEGORI -->
+  <div class="chart-card fade-up" style="margin-bottom: 16px;">
+    <div class="card-title"><span class="card-title-dot" style="background:var(--easit-green)"></span> Kategorifördelning (topp 10)</div>
+    <div class="bar-list" id="katBars"></div>
+  </div>
+
+  <!-- BRÅDSKA + HANDLÄGGARGRUPP -->
+  <div class="charts-grid">
+    <div class="chart-card fade-up">
+      <div class="card-title"><span class="card-title-dot" style="background:var(--easit-orange)"></span> Brådska</div>
+      <div class="chart-wrap" style="height: 200px;"><canvas id="bradskaChart"></canvas></div>
+    </div>
+    <div class="chart-card fade-up delay-1">
+      <div class="card-title"><span class="card-title-dot" style="background:var(--easit-accent)"></span> Ursprung</div>
+      <div class="chart-wrap" style="height: 200px;"><canvas id="ursprungChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- HANDLÄGGNINGSTID -->
+  <div class="chart-card fade-up" style="margin-top:16px; margin-bottom:16px;">
+    <div class="card-title"><span class="card-title-dot" style="background:var(--easit-purple)"></span> Genomsnittlig handläggningstid per grupp (minuter)</div>
+    <div class="bar-list" id="grpBars"></div>
+  </div>
+
+  <!-- PRIORITET + ORG -->
+  <div class="charts-grid">
+    <div class="chart-card fade-up">
+      <div class="card-title"><span class="card-title-dot" style="background:var(--easit-red)"></span> Prioritet</div>
+      <div class="chart-wrap" style="height: 220px;"><canvas id="prioChart"></canvas></div>
+    </div>
+    <div class="chart-card fade-up delay-1">
+      <div class="card-title"><span class="card-title-dot" style="background:var(--easit-green)"></span> Topp organisationer</div>
+      <div class="bar-list" id="orgBars"></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="demo-footer">
+  Powered by <strong>Easit GO</strong> · AI Insights Demo · Data analyseras lokalt i webbläsaren · Inga uppgifter skickas externt
+</div>
+</div>
+
+<script>
+// ---- DEMO DATA ----
+const DEMO_DATA = {
+  total: 926,
+  status: { 'Löst': 386, 'Pågående': 229, 'Väntar kund': 198, 'Registrerad': 90, 'Avslutad': 21, 'Utredning': 2 },
+  typer: { 'Behörighet': 136, 'Felanmälan': 101, 'Allvarlig': 23, 'Fråga': 15, 'Kapacitet': 10, 'Säkerhet': 7 },
+  kategorier: [['Applikationer',143],['Arbetsplats',142],['Vaktmästeri',64],['Ekonomi/HR',47],['Central plattform',47],['Personal',39],['Skrivare',37],['Nätverk',36],['E-post',33],['Kundtjänst',29]],
+  bradska: { 'Hög': 250, 'Normal': 235, 'Låg': 189, 'Odefinierad': 252 },
+  ursprung: { 'Manuellt': 750, 'E-post': 96, 'Webb': 80 },
+  grupper: [['Specialist',5439],['2-linjen',12504],['Odefinierad',16444],['1-linjen',17229],['3-linjen',88920],['Teknikgruppen',108950],['Servergruppen',288327]],
+  organisationer: [['Easit AB',155],['Företaget AB',134],['Odefinierad',65],['Kval. Väst AB',56],['Kval. Norr AB',56],['Kvalitetsbolaget AB',45],['Kval. Öst AB',41],['Easit Stockholm',38],['Hewlett Packard',37],['Kval. Syd AB',35]],
+  prioritet: { 'P1': 87, 'P2': 160, 'P3': 218, 'P4': 133, 'P5': 66 },
+  period: 'Jan 2020 – Mar 2026'
+};
+
+// ---- DRAG & DROP ----
+const dropZone = document.getElementById('dropZone');
+['dragover','dragenter'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.remove('dragover'); }));
+dropZone.addEventListener('drop', ev => { const f = ev.dataTransfer.files[0]; if(f) handleFile(f); });
+
+function handleFile(file) {
+  if (!file) return;
+  showLoading();
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
+      processRows(rows, file.name);
+    } catch(err) {
+      console.error(err);
+      alert('Kunde inte läsa filen. Försök med en annan Excel-fil.');
+      resetToUpload();
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function processRows(rows, filename) {
+  const total = rows.length;
+  const statusMap = {}, typMap = {}, katMap = {}, bradMap = {}, ursprMap = {}, orgMap = {}, prioMap = {};
+  let minDate = null, maxDate = null;
+
+  rows.forEach(r => {
+    count(statusMap, r['Status']);
+    count(typMap, r['Typ']);
+    count(katMap, r['Kategori_1']);
+    count(bradMap, r['Brådska']);
+    count(ursprMap, r['Ursprung']);
+    count(orgMap, r['Organisation']);
+    const p = r['Prioritet'];
+    if (p != null) count(prioMap, 'P' + Math.round(p));
+    const d = r['Skapad'];
+    if (d) {
+      const dt = new Date(d);
+      if (!minDate || dt < minDate) minDate = dt;
+      if (!maxDate || dt > maxDate) maxDate = dt;
+    }
+  });
+
+  const fmtDate = d => d ? d.toLocaleDateString('sv-SE', {year:'numeric',month:'short'}) : '';
+  const period = (minDate && maxDate) ? fmtDate(minDate) + ' – ' + fmtDate(maxDate) : filename;
+
+  // Groups + avg time
+  const grpTimes = {};
+  rows.forEach(r => {
+    const g = r['Handläggargrupp'];
+    const t = parseFloat(r['Total förfluten tid']);
+    if (g && !isNaN(t)) {
+      if (!grpTimes[g]) grpTimes[g] = { sum: 0, count: 0 };
+      grpTimes[g].sum += t; grpTimes[g].count++;
+    }
+  });
+  const grpAvg = Object.entries(grpTimes).map(([k, v]) => [k, Math.round(v.sum / v.count)]).sort((a,b)=>a[1]-b[1]);
+  const katSorted = Object.entries(katMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const orgSorted = Object.entries(orgMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const prioSorted = ['P1','P2','P3','P4','P5'].reduce((o,k) => { o[k] = prioMap[k]||0; return o; }, {});
+
+  const data = { total, status: statusMap, typer: typMap, kategorier: katSorted, bradska: bradMap, ursprung: ursprMap, grupper: grpAvg, organisationer: orgSorted, prioritet: prioSorted, period };
+  renderDashboard(data);
+}
+
+function count(map, val) {
+  if (!val || val === 'Odefinierad' || val === '' || val === null) return;
+  map[val] = (map[val]||0) + 1;
+}
+
+function loadDemoData() { showLoading(); setTimeout(() => renderDashboard(DEMO_DATA), 2200); }
+
+// ---- LOADING ----
+function showLoading() {
+  document.getElementById('upload-section').style.display = 'none';
+  const ls = document.getElementById('loading-section');
+  ls.style.display = 'flex';
+  const steps = ['step1','step2','step3','step4'];
+  steps.forEach((id, i) => setTimeout(() => {
+    const el = document.getElementById(id);
+    el.classList.add('visible');
+    if (i > 0) { const prev = document.getElementById(steps[i-1]); if(prev) prev.querySelector('.step-icon').textContent = '✓'; prev?.querySelector('.step-icon')?.classList.add('done'); }
+  }, i * 500));
+}
+
+// ---- RENDER ----
+let charts = [];
+function destroyCharts() { charts.forEach(c => c.destroy()); charts = []; }
+
+function renderDashboard(data) {
+  destroyCharts();
+  document.getElementById('loading-section').style.display = 'none';
+  document.getElementById('dashboard-section').style.display = 'block';
+
+  // KPIs
+  const open = (data.status['Registrerad']||0) + (data.status['Pågående']||0) + (data.status['Utredning']||0);
+  const solved = data.status['Löst']||0;
+  const waiting = data.status['Väntar kund']||0;
+  document.getElementById('kpiTotal').textContent = data.total.toLocaleString('sv-SE');
+  document.getElementById('kpiPeriod').textContent = data.period || '';
+  document.getElementById('kpiOpen').textContent = open.toLocaleString('sv-SE');
+  document.getElementById('kpiOpenSub').textContent = Math.round(open/data.total*100) + '% av totalt';
+  document.getElementById('kpiSolved').textContent = solved.toLocaleString('sv-SE');
+  document.getElementById('kpiSolvedSub').textContent = Math.round(solved/data.total*100) + '% lösta';
+  document.getElementById('kpiWaiting').textContent = waiting.toLocaleString('sv-SE');
+  document.getElementById('kpiWaitingSub').textContent = Math.round(waiting/data.total*100) + '% väntar svar';
+
+  const topKat = data.kategorier[0];
+  const topTyp = Object.entries(data.typer).sort((a,b)=>b[1]-a[1])[0];
+  const manualPct = Math.round((data.ursprung['Manuellt']||0) / data.total * 100);
+  const openPct = Math.round(open / data.total * 100);
+  const slowestGroup = data.grupper[data.grupper.length-1];
+
+  // AI text
+  const aiInsight = `Analysen av ${data.total.toLocaleString('sv-SE')} ärenden visar att ${openPct}% fortfarande är aktiva, vilket indikerar en hög arbetsbelastning. Den vanligaste ärendetypen är <strong>${topTyp?.[0]||'–'}</strong> och den mest frekventa kategorin är <strong>${topKat?.[0]||'–'} (${topKat?.[1]||0} st)</strong>. ${manualPct}% av alla ärenden registreras manuellt — ett tydligt tecken på att automatiserad insamling via e-post och webb kan frigöra signifikant handläggarkapacitet.`;
+
+  typewriterEffect('aiText', aiInsight, 18);
+
+  // Bullets
+  const bullets = [
+    { title: 'Automatisering', text: `${manualPct}% manuella registreringar — stor potential för Email2GO och webbformulär` },
+    { title: 'Kapacitet', text: slowestGroup ? `${slowestGroup[0]} har i snitt ${slowestGroup[1].toLocaleString('sv-SE')} min handläggningstid` : 'Handläggningstid varierar kraftigt mellan grupper' },
+    { title: 'Triage', text: `${open} öppna ärenden kräver aktiv prioritering — AI-triage kan stödja 1-linjen` }
+  ];
+  document.getElementById('aiBullets').innerHTML = bullets.map(b => `<div class="ai-bullet"><strong>${b.title}</strong>${b.text}</div>`).join('');
+
+  // Status pills
+  const statusColors = { 'Löst':'#2E9E6B','Pågående':'#0057B8','Väntar kund':'#E07B39','Registrerad':'#8B93AA','Avslutad':'#6B4FBB','Utredning':'#D64045' };
+  document.getElementById('statusGrid').innerHTML = Object.entries(data.status).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,v]) =>
+    `<div class="status-pill">
+      <div class="status-pill-left"><span class="status-pill-dot" style="background:${statusColors[k]||'#aaa'}"></span>${k}</div>
+      <div class="status-pill-count">${v}</div>
+    </div>`).join('');
+
+  // TYP chart
+  const typEntries = Object.entries(data.typer).sort((a,b)=>b[1]-a[1]);
+  charts.push(new Chart(document.getElementById('typChart'), {
+    type: 'bar',
+    data: {
+      labels: typEntries.map(e=>e[0]),
+      datasets: [{ data: typEntries.map(e=>e[1]), backgroundColor: ['#0057B8','#6B4FBB','#D64045','#2E9E6B','#E07B39','#00A3E0'], borderRadius: 6, borderSkipped: false }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, indexAxis:'y',
+      scales:{ x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#5A6380',font:{size:11}}}, y:{grid:{display:false},ticks:{color:'#1A1F36',font:{size:11,weight:'500'}}} } }
+  }));
+
+  // BRÅDSKA
+  const bData = Object.entries(data.bradska).filter(([k])=>k!=='Odefinierad').sort((a,b)=>b[1]-a[1]);
+  charts.push(new Chart(document.getElementById('bradskaChart'), {
+    type: 'doughnut',
+    data: { labels: bData.map(e=>e[0]), datasets: [{ data: bData.map(e=>e[1]), backgroundColor:['#D64045','#0057B8','#2E9E6B'], borderWidth: 3, borderColor:'#fff' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'bottom',labels:{color:'#5A6380',font:{size:11},boxWidth:10,padding:10}}}, cutout:'60%' }
+  }));
+
+  // URSPRUNG
+  const uEntries = Object.entries(data.ursprung).sort((a,b)=>b[1]-a[1]);
+  charts.push(new Chart(document.getElementById('ursprungChart'), {
+    type: 'doughnut',
+    data: { labels: uEntries.map(e=>e[0]), datasets: [{ data: uEntries.map(e=>e[1]), backgroundColor:['#5A6380','#6B4FBB','#00A3E0'], borderWidth:3, borderColor:'#fff' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'bottom',labels:{color:'#5A6380',font:{size:11},boxWidth:10,padding:10}}}, cutout:'60%' }
+  }));
+
+  // PRIORITET
+  const prioLabels = Object.keys(data.prioritet);
+  const prioColors = ['#D64045','#E07B39','#0057B8','#2E9E6B','#8B93AA'];
+  charts.push(new Chart(document.getElementById('prioChart'), {
+    type: 'bar',
+    data: { labels: prioLabels, datasets: [{ data: Object.values(data.prioritet), backgroundColor: prioColors, borderRadius: 6, borderSkipped: false }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{grid:{display:false},ticks:{color:'#1A1F36',font:{size:12,weight:'500'}}}, y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#5A6380',font:{size:11}}} } }
+  }));
+
+  // BAR LISTS
+  makeBars('katBars', data.kategorier, '#0057B8');
+  makeBars('orgBars', data.organisationer, '#2E9E6B');
+  makeBars('grpBars', data.grupper.filter(([k])=>k!=='Odefinierad'), '#6B4FBB');
+
+  window.scrollTo(0,0);
+}
+
+function makeBars(id, data, color) {
+  if (!data || !data.length) return;
+  const max = data[0][1];
+  document.getElementById(id).innerHTML = data.map(([label, val]) => {
+    const pct = Math.round(val/max*100);
+    return `<div class="bar-row">
+      <div class="bar-label" title="${label}">${label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}">${pct>15?val:''}</div></div>
+      <div class="bar-num">${pct<=15?val:''}</div>
+    </div>`;
+  }).join('');
+}
+
+function typewriterEffect(id, html, speed) {
+  const el = document.getElementById(id);
+  el.innerHTML = '<span class="ai-cursor"></span>';
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  const text = temp.innerHTML;
+  let i = 0, output = '';
+  const cursor = '<span class="ai-cursor"></span>';
+  const timer = setInterval(() => {
+    if (i < text.length) {
+      if (text[i] === '<') {
+        const end = text.indexOf('>', i);
+        if (end !== -1) { output += text.slice(i, end+1); i = end+1; } else { output += text[i++]; }
+      } else { output += text[i++]; }
+      el.innerHTML = output + cursor;
+    } else { el.innerHTML = output; clearInterval(timer); }
+  }, speed);
+}
+
+function resetToUpload() {
+  destroyCharts();
+  document.getElementById('dashboard-section').style.display = 'none';
+  document.getElementById('loading-section').style.display = 'none';
+  document.getElementById('upload-section').style.display = 'flex';
+  ['step1','step2','step3','step4'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('visible');
+    const icon = el.querySelector('.step-icon');
+    icon.classList.remove('done');
+  });
+  document.getElementById('step1').querySelector('.step-icon').textContent = '📊';
+  document.getElementById('step2').querySelector('.step-icon').textContent = '🔍';
+  document.getElementById('step3').querySelector('.step-icon').textContent = '🤖';
+  document.getElementById('step4').querySelector('.step-icon').textContent = '📈';
+}
+</script>
+</body>
+</html>
